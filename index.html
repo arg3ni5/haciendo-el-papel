@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Libreto Interactivo: ¿Quién tiene el control?</title>
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #f59e0b; /* Color ámbar */
+            --accent-glow: rgba(245, 158, 11, 0.2);
+            --border: #334155;
+            --action-bg: #1e1e24;
+            --multimedia-bg: #13233a;
+            --highlight-bg: rgba(245, 158, 11, 0.15);
+            --highlight-border: #f59e0b;
+        }
+
+        body.light-mode {
+            --bg-main: #f1f5f9;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --accent: #d97706;
+            --accent-glow: rgba(217, 119, 6, 0.15);
+            --border: #cbd5e1;
+            --action-bg: #f8fafc;
+            --multimedia-bg: #e0f2fe;
+            --highlight-bg: #fef3c7;
+            --highlight-border: #d97706;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding-bottom: 80px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Control Panel Header */
+        .header-panel {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 2px solid var(--accent);
+            padding: 1rem 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        body.light-mode .header-panel {
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .header-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.2rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .title-area h1 {
+            font-size: 1.4rem;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .title-area p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .controls-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .control-box {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .control-box label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: bold;
+            color: var(--text-muted);
+        }
+
+        select, .btn-theme {
+            background: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 0.5rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        select:focus, .btn-theme:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .btn-theme {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            align-self: flex-end;
+            height: 38px;
+        }
+
+        /* Script Container */
+        .script-container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .scene-header {
+            background: linear-gradient(135deg, var(--accent), #b45309);
+            color: #ffffff;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin: 2.5rem 0 1.5rem 0;
+            font-size: 1.3rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .scene-header span {
+            font-size: 0.85rem;
+            background: rgba(0,0,0,0.25);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-weight: normal;
+        }
+
+        .line-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem 1.2rem;
+            margin-bottom: 0.8rem;
+            transition: all 0.25s ease;
+            position: relative;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .line-card:hover {
+            border-color: var(--text-muted);
+        }
+
+        /* Tipos de tarjetas */
+        .line-card[data-type="action"] {
+            background: var(--action-bg);
+            border-style: dashed;
+            font-style: italic;
+            color: var(--text-muted);
+        }
+
+        .line-card[data-type="multimedia"] {
+            background: var(--multimedia-bg);
+            border-left: 4px solid #38bdf8;
+            font-family: monospace;
+            font-size: 0.95rem;
+        }
+
+        /* Tarjeta Resaltada (El personaje seleccionado) */
+        .line-card.is-highlighted {
+            background: var(--highlight-bg);
+            border: 2px solid var(--highlight-border);
+            box-shadow: 0 0 18px var(--accent-glow);
+            transform: scale(1.01);
+            z-index: 2;
+        }
+
+        .line-card.is-highlighted::before {
+            content: "👑 TU TURNO";
+            position: absolute;
+            top: -10px;
+            right: 15px;
+            background: var(--accent);
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 900;
+            padding: 2px 8px;
+            border-radius: 10px;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .char-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            color: #fff;
+        }
+
+        .is-highlighted .char-avatar {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .line-content {
+            flex-grow: 1;
+        }
+
+        .char-name {
+            font-weight: 800;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--accent);
+            margin-bottom: 0.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .line-card[data-type="action"] .char-name {
+            color: var(--text-muted);
+        }
+
+        .line-card[data-type="multimedia"] .char-name {
+            color: #38bdf8;
+        }
+
+        .line-text {
+            font-size: 1.05rem;
+        }
+
+        .line-text em {
+            color: var(--accent);
+            font-style: normal;
+            font-weight: 600;
+        }
+
+        /* Omitted lines divider */
+        .omitted-divider {
+            text-align: center;
+            padding: 0.6rem;
+            margin: 1rem 0;
+            background: rgba(148, 163, 184, 0.08);
+            border: 1px dashed var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            background: rgba(0,0,0,0.2);
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+
+        .stats-bar strong {
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Control Panel -->
+    <header class="header-panel">
+        <div class="header-content">
+            <div class="title-area">
+                <h1>🎭 Modo Ensayo: ¿Quién tiene el control?</h1>
+                <p>Libreto personalizado con filtro de contexto escénico</p>
+            </div>
+
+            <div class="controls-group">
+                <div class="control-box">
+                    <label for="charSelect">Mi Personaje:</label>
+                    <select id="charSelect">
+                        <option value="NONE" selected>-- Selecciona tu personaje --</option>
+                        <option value="PEREZA">🦥 Pereza (Fabián)</option>
+                        <option value="MATEO">👦 Mateo (Gabo)</option>
+                        <option value="ALEGRIA">😄 Alegría (María)</option>
+                        <option value="ANSIEDAD">😰 Ansiedad (Noemy)</option>
+                        <option value="ORGULLO">🦚 Orgullo (Marco)</option>
+                        <option value="LUJURIA">🔥 Lujuria (Sebastián)</option>
+                        <option value="IRA">😡 Ira (Lucy)</option>
+                        <option value="TRISTEZA">😢 Tristeza / Apatía (Ámbar)</option>
+                        <option value="RAZON">🧠 Razón / Lógica (Josué)</option>
+                        <option value="ESPIRITU">🕊️ Espíritu (Gerson)</option>
+                    </select>
+                </div>
+
+                <div class="control-box">
+                    <label for="modeSelect">Modo de Visualización:</label>
+                    <select id="modeSelect">
+                        <option value="context-2">🎯 Modo Ensayo: 2 Antes y 2 Después</option>
+                        <option value="context-1">⚡ Modo Rápido: 1 Antes y 1 Después</option>
+                        <option value="context-3">🔍 Modo Amplio: 3 Antes y 3 Después</option>
+                        <option value="only-me">🗣️ Solo mis diálogos</option>
+                        <option value="all">📖 Libreto Completo (Resalta a mi personaje)</option>
+                    </select>
+                </div>
+
+                <button class="btn-theme" id="themeToggle" title="Cambiar tema">
+                    🌙 <span id="themeText">Modo Noche</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Script Container -->
+    <main class="script-container" id="scriptBody">
+        <div class="stats-bar" id="statsBar">
+            <span>Estado: <strong id="statMode">Esperando selección...</strong></span>
+            <span>Intervenciones tuyas: <strong id="statCount">-</strong></span>
+        </div>
+
+        <!-- ESCENA 1 -->
+        <div class="scene-block" data-scene="1">
+            <div class="scene-header">
+                Escena 1: Buenos Días
+                <span>Inicio / Mañana</span>
+            </div>
+
+            <div class="line-card" data-character="ACOTACION" data-type="action">
+                <div class="char-avatar">🎬</div>
+                <div class="line-content">
+                    <div class="char-name">Acotación / Multimedia</div>
+                    <div class="line-text">(Suena alarma despertadora de poquito a fuerte, repetitiva y desesperante. El joven manotea con su mano para apagarla repetidamente). <strong>Multimedia:</strong> En las pantallas sale las 8 am en un reloj.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MATEO" data-type="dialogue">
+                <div class="char-avatar">👦</div>
+                <div class="line-content">
+                    <div class="char-name">Mateo</div>
+                    <div class="line-text">¡Ya! ¡Ya! ¡Ya voy! Cinco minutos más.... ¡Señor tu conoces mi corazón... amén! <em>(sigue dormido mientras habla, pero logra apagar su celular)</em></div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ACOTACION" data-type="action">
+                <div class="char-avatar">🎬</div>
+                <div class="line-content">
+                    <div class="char-name">Acotación / Multimedia</div>
+                    <div class="line-text">(En el fondo de la escena empiezan a aparecer varios personajes caminando medio dormidos, con paños, gorros de dormir, un cepillo de dientes, el pelo despeinado, una mascarilla de cara, un antifaz de dormir... Y se empiezan a mover de un lado para otro como si se alistaran para empezar el día. Hasta que vuelve a sonar la alarma). <strong>Suena la canción "Come and get your love"</strong> y las pantallas empiezan a cambiar según van apareciendo los estados de ánimo y el nombre de cada uno.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ANSIEDAD" data-type="dialogue">
+                <div class="char-avatar">😰</div>
+                <div class="line-content">
+                    <div class="char-name">Ansiedad</div>
+                    <div class="line-text">NO, NO, NO, NO, ¡NO! ¡¡¡Tenemos que levantarnos ya!!! ¡Y si llegamos tarde por dormirnos!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="PEREZA" data-type="dialogue">
+                <div class="char-avatar">🦥</div>
+                <div class="line-content">
+                    <div class="char-name">Pereza</div>
+                    <div class="line-text">¡Y si llegamos tarde por dormirnos! <em>(imita a ansiedad molesto e irritado)</em> ¡Que pereza ya empezó usted, tan temprano!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="TRISTEZA" data-type="dialogue">
+                <div class="char-avatar">😢</div>
+                <div class="line-content">
+                    <div class="char-name">Tristeza</div>
+                    <div class="line-text">¡¡Porque siempre tan temprano!! ¡Quiero llorar!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="RAZON" data-type="dialogue">
+                <div class="char-avatar">🧠</div>
+                <div class="line-content">
+                    <div class="char-name">Razón</div>
+                    <div class="line-text">¡SIP equipo! ¡Creo que es hora de levantarnos! ¡Ya pospusimos la alarma una vez!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ANSIEDAD" data-type="dialogue">
+                <div class="char-avatar">😰</div>
+                <div class="line-content">
+                    <div class="char-name">Ansiedad</div>
+                    <div class="line-text">¡Si y si ella nos escribió y si nos deja en visto!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MATEO" data-type="dialogue">
+                <div class="char-avatar">👦</div>
+                <div class="line-content">
+                    <div class="char-name">Mateo</div>
+                    <div class="line-text">¿Qué? ¿Qué paso? ¿Quien? ¿Que? <em>(se despierta de golpe y se sienta para tratar de ordenar sus ideas mientras que en el fondo los personajes que estaban hablando se retiran para terminar de alistarse)</em></div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ALEGRIA" data-type="dialogue">
+                <div class="char-avatar">😄</div>
+                <div class="line-content">
+                    <div class="char-name">Alegría</div>
+                    <div class="line-text">Buenos días!!! ¡Hoy es un día increíble! ¡¡Dios tiene algo hermoso preparado!!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="PEREZA" data-type="dialogue">
+                <div class="char-avatar">🦥</div>
+                <div class="line-content">
+                    <div class="char-name">Pereza</div>
+                    <div class="line-text">¡O... podemos seguir descansando y no hacer absolutamente nada! <em>(Se acerca al control de mando)</em> ¡Eso si suena bien!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="RAZON" data-type="dialogue">
+                <div class="char-avatar">🧠</div>
+                <div class="line-content">
+                    <div class="char-name">Razón</div>
+                    <div class="line-text">¡Nop pereza ya lo hemos hablado, no puedes tomar el control en las mañanas!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="IRA" data-type="dialogue">
+                <div class="char-avatar">😡</div>
+                <div class="line-content">
+                    <div class="char-name">Ira</div>
+                    <div class="line-text">¡ARRRIIIBAAAAAA! ¡YA QUE! ¡A levantarse carajo!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MATEO" data-type="dialogue">
+                <div class="char-avatar">👦</div>
+                <div class="line-content">
+                    <div class="char-name">Mateo</div>
+                    <div class="line-text">¿Ya oí, ya oí? ¿Basura? <em>(golpea el celular que suena por tercera vez con mucha cólera)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ANSIEDAD" data-type="dialogue">
+                <div class="char-avatar">😰</div>
+                <div class="line-content">
+                    <div class="char-name">Ansiedad</div>
+                    <div class="line-text">¡Deberíamos revisar el celular! ¡Ya! Pudo habernos escrito anoche u hoy temprano. O... podría odiarnos eso también es una posibilidad. Y no escribirnos nunca.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ORGULLO" data-type="dialogue">
+                <div class="char-avatar">🦚</div>
+                <div class="line-content">
+                    <div class="char-name">Orgullo</div>
+                    <div class="line-text">¡Oh! ¡Tranquilos! Relájense. Ya llego papi. No se preocupen yo tomaré las decisiones ahora. Todo está bajo control. <em>(Se acerca al control de mando)</em></div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ACOTACION" data-type="action">
+                <div class="char-avatar">🎬</div>
+                <div class="line-content">
+                    <div class="char-name">Acotación</div>
+                    <div class="line-text">(Suena el celular, todos se congelan y lo vuelven a ver).</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ANSIEDAD" data-type="dialogue">
+                <div class="char-avatar">😰</div>
+                <div class="line-content">
+                    <div class="char-name">Ansiedad</div>
+                    <div class="line-text">¿Es ella?</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ORGULLO" data-type="dialogue">
+                <div class="char-avatar">🦚</div>
+                <div class="line-content">
+                    <div class="char-name">Orgullo</div>
+                    <div class="line-text">Obviamente es ella.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="LUJURIA" data-type="dialogue">
+                <div class="char-avatar">🔥</div>
+                <div class="line-content">
+                    <div class="char-name">Lujuria</div>
+                    <div class="line-text">¿Es ella? Creo que voy a ayudar aquí <em>(Se acerca para tomar el control, pero lo detiene La razón)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="RAZON" data-type="dialogue">
+                <div class="char-avatar">🧠</div>
+                <div class="line-content">
+                    <div class="char-name">Razón</div>
+                    <div class="line-text">¡Cálmate! <em>(Detiene a Lujuria)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ALEGRIA" data-type="dialogue">
+                <div class="char-avatar">😄</div>
+                <div class="line-content">
+                    <div class="char-name">Alegría</div>
+                    <div class="line-text">¡Que emoción, qué nos irá a decir!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="IRA" data-type="dialogue">
+                <div class="char-avatar">😡</div>
+                <div class="line-content">
+                    <div class="char-name">Ira</div>
+                    <div class="line-text">¡CONTESTA CARAJO! <em>(Todos ven a ira con asombro, mientras toma el control y luego todos ven a Mateo)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MATEO" data-type="dialogue">
+                <div class="char-avatar">👦</div>
+                <div class="line-content">
+                    <div class="char-name">Mateo</div>
+                    <div class="line-text"><em>(Toma el celular, lee, y su expresión cambia, y empieza a sonreír, en las pantallas aparece el mensaje de ella: "Buenos días, Soñé contigo")</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MULTIMEDIA" data-type="multimedia">
+                <div class="char-avatar">📱</div>
+                <div class="line-content">
+                    <div class="char-name">Mensajes en Pantalla (Chat Sofía)</div>
+                    <div class="line-text">
+                        <strong>Sofía:</strong> ¡Buenas noches Mateo!<br>
+                        <strong>Sofía:</strong> Seguro sueño contigo hoy jajajaj <em>[Emoticón de dormir]</em><br>
+                        <strong>Mateo:</strong> Hablamos mañana... yo también voy a dormir pensando en vos...<br>
+                        <em>--- Mensaje de Hoy ---</em><br>
+                        <strong>Sofy:</strong> ¡¡Buenos días!! Soñé contigo
+                    </div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="LUJURIA" data-type="dialogue">
+                <div class="char-avatar">🔥</div>
+                <div class="line-content">
+                    <div class="char-name">Lujuria</div>
+                    <div class="line-text">Mmm... eso suena interesante... deberías seguir la conversación... Porque si te escribe es obvio que quiere contarte exactamente qué soñó... Pregunta <em>(Se sienta sutilmente al lado del personaje, con el control en la mano)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="TRISTEZA" data-type="dialogue">
+                <div class="char-avatar">😢</div>
+                <div class="line-content">
+                    <div class="char-name">Tristeza</div>
+                    <div class="line-text">Se siente bien cuando te escribe... bueno antes de... ya sabes, la culpa <em>(se sienta junto a Mateo hablando bajito)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ESPIRITU" data-type="dialogue">
+                <div class="char-avatar">🕊️</div>
+                <div class="line-content">
+                    <div class="char-name">Espíritu</div>
+                    <div class="line-text">Sabes que esto no te está acercando a Dios. No es necesario sentir culpa.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ANSIEDAD" data-type="dialogue">
+                <div class="char-avatar">😰</div>
+                <div class="line-content">
+                    <div class="char-name">Ansiedad</div>
+                    <div class="line-text">Bueno eso es cierto, siempre terminas arrepintiéndote... y luego no puedes parar y otra vez te sientes ansioso porque fallaste y... <em>(Es interrumpida por Lujuria)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="LUJURIA" data-type="dialogue">
+                <div class="char-avatar">🔥</div>
+                <div class="line-content">
+                    <div class="char-name">Lujuria</div>
+                    <div class="line-text">¡Shhhhhhh tranquila! <em>(Dirigiéndose a Ansiedad)</em> ¡Eh me ayudas aquí!! <em>(Dirigiéndose a Orgullo)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ORGULLO" data-type="dialogue">
+                <div class="char-avatar">🦚</div>
+                <div class="line-content">
+                    <div class="char-name">Orgullo</div>
+                    <div class="line-text">¡Vengan por aquí todo va a salir bien, déjenos trabajar sí! <em>(Retira a Ansiedad y Tristeza del lado de Mateo)</em> Por favor solo estamos hablando, no ha pasado nada.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="RAZON" data-type="dialogue">
+                <div class="char-avatar">🧠</div>
+                <div class="line-content">
+                    <div class="char-name">Razón</div>
+                    <div class="line-text">Buen punto.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="LUJURIA" data-type="dialogue">
+                <div class="char-avatar">🔥</div>
+                <div class="line-content">
+                    <div class="char-name">Lujuria</div>
+                    <div class="line-text">Exacto... nada grave... solo un mensajito <em>(Toma el control. Mateo toma el celular y duda)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ANSIEDAD" data-type="dialogue">
+                <div class="char-avatar">😰</div>
+                <div class="line-content">
+                    <div class="char-name">Ansiedad</div>
+                    <div class="line-text">¡Responde ya!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ALEGRIA" data-type="dialogue">
+                <div class="char-avatar">😄</div>
+                <div class="line-content">
+                    <div class="char-name">Alegría</div>
+                    <div class="line-text">¿Y si no es lo mejor para Mateo? Aunque cuando habla con ella ya no se siente solo.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ESPIRITU" data-type="dialogue">
+                <div class="char-avatar">🕊️</div>
+                <div class="line-content">
+                    <div class="char-name">Espíritu</div>
+                    <div class="line-text">Él nunca está solo... Dios no lo llamó a esto. No están ayudándolo, ¡ya lo han visto pasar por esto antes!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MATEO" data-type="dialogue">
+                <div class="char-avatar">👦</div>
+                <div class="line-content">
+                    <div class="char-name">Mateo</div>
+                    <div class="line-text"><em>(Toma el celular, y empieza a escribir... borra... replantea el mensaje y todo se ve en la pantalla)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ORGULLO" data-type="dialogue">
+                <div class="char-avatar">🦚</div>
+                <div class="line-content">
+                    <div class="char-name">Orgullo</div>
+                    <div class="line-text">¡No hay que ser negativos! ¿No sabemos qué va a pasar hasta probar cierto? ¿Tú qué dices Razón?</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="RAZON" data-type="dialogue">
+                <div class="char-avatar">🧠</div>
+                <div class="line-content">
+                    <div class="char-name">Razón</div>
+                    <div class="line-text">Bueno mmm probemos.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MULTIMEDIA" data-type="multimedia">
+                <div class="char-avatar">📱</div>
+                <div class="line-content">
+                    <div class="char-name">Mensajes en Pantalla (Chat Sofía)</div>
+                    <div class="line-text">
+                        <strong>Mateo:</strong> Claro hablamos más tarde... <em>[STICKER Cariñoso de despedida]</em><br>
+                        <strong>Sofía:</strong> Ok chao! <em>[Sticker de besos y coqueta]</em><br>
+                        <em>--- Mensaje de Hoy ---</em><br>
+                        <strong>Sofy:</strong> Hola Guapo...<br>
+                        <strong>Sofy:</strong> ¿Qué haces? Ya volví<br>
+                        <strong>Sofy:</strong> ¿Ya quiero verte? ¿Hoy nos vemos?<br>
+                        <strong>Sofy:</strong> ¿jajaja estoy siendo muy intensa?
+                    </div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="LUJURIA" data-type="dialogue">
+                <div class="char-avatar">🔥</div>
+                <div class="line-content">
+                    <div class="char-name">Lujuria</div>
+                    <div class="line-text">Contesta... Solo fluye <em>(insistente y toma el control)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MATEO" data-type="dialogue">
+                <div class="char-avatar">👦</div>
+                <div class="line-content">
+                    <div class="char-name">Mateo</div>
+                    <div class="line-text"><em>(Envía el mensaje)</em>: ¿En serio? ¿Qué soñaste? ¡Quiero detalles!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="TRISTEZA" data-type="dialogue">
+                <div class="char-avatar">😢</div>
+                <div class="line-content">
+                    <div class="char-name">Tristeza</div>
+                    <div class="line-text">¿Se envió?</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ESCENA 2 -->
+        <div class="scene-block" data-scene="2">
+            <div class="scene-header">
+                Escena 2: Solo un Mensaje Más
+                <span>Mediodía / 12:00 PM</span>
+            </div>
+
+            <div class="line-card" data-character="ACOTACION" data-type="action">
+                <div class="char-avatar">🎬</div>
+                <div class="line-content">
+                    <div class="char-name">Acotación / Multimedia</div>
+                    <div class="line-text">(Se encienden las luces con una música enérgica y Mateo ya está vestido y camina de un lado a otro arreglándose para salir. La cama está desordenada y sus cosas tiradas por todo lado, su Biblia sigue ahí esperando ser usada hasta el fin de semana. En las pantallas aparecen mensajes rápidos de su conversación con Sofía, sonidos de mensajes van y vienen). <strong>La pantalla marca las 12 pm</strong>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ALEGRIA" data-type="dialogue">
+                <div class="char-avatar">😄</div>
+                <div class="line-content">
+                    <div class="char-name">Alegría</div>
+                    <div class="line-text">¡¡Otra vez está escribiendo!! Le gustamos.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="PEREZA" data-type="dialogue">
+                <div class="char-avatar">🦥</div>
+                <div class="line-content">
+                    <div class="char-name">Pereza</div>
+                    <div class="line-text">¡¡Si bueno ya aburre todos los días es igual, ya cansa no!! Demasiado demandante esto de estar contestando. <em>(recostado en una esquina)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ANSIEDAD" data-type="dialogue">
+                <div class="char-avatar">😰</div>
+                <div class="line-content">
+                    <div class="char-name">Ansiedad</div>
+                    <div class="line-text">¡Responde... responde... deberías responder... Responde... pero que parezca natural!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="IRA" data-type="dialogue">
+                <div class="char-avatar">😡</div>
+                <div class="line-content">
+                    <div class="char-name">Ira</div>
+                    <div class="line-text">¡Te puedes calmar!!! ¡¡La voy a matar!! <em>(Camina hacia Ansiedad decidido a golpearla y es detenido por Razón)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="RAZON" data-type="dialogue">
+                <div class="char-avatar">🧠</div>
+                <div class="line-content">
+                    <div class="char-name">Razón</div>
+                    <div class="line-text">¡Quieto Ira! ¡Ansiedad podrías bajarle 3 rayitas por favor!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MULTIMEDIA" data-type="multimedia">
+                <div class="char-avatar">📱</div>
+                <div class="line-content">
+                    <div class="char-name">Mensajes en Pantalla (Chat Sofía)</div>
+                    <div class="line-text">
+                        <strong>Mateo:</strong> ¡Hola! ¡No para nada!<br>
+                        <strong>Mateo:</strong> ¿¿Como estas??<br>
+                        <strong>Mateo:</strong> ¡Si claro! ¿Quieres que nos veamos hoy? Tengo el día libre.<br>
+                        <strong>Sebas [Amigo/Grupo o Notificación]:</strong> ¡Wow eso fue rápido!<br>
+                        <strong>Sofy:</strong> ¿Estabas esperando mi mensaje?<br>
+                        <strong>Sofy:</strong> <em>[STICKER coqueta]</em>
+                    </div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ORGULLO" data-type="dialogue">
+                <div class="char-avatar">🦚</div>
+                <div class="line-content">
+                    <div class="char-name">Orgullo</div>
+                    <div class="line-text">¡Si oye Ansiedad no tienes idea de estos temas! No se contesta inmediatamente. Debe dar unos minutos entiendes. No queremos parecer desesperados. Tenemos dignidad.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="LUJURIA" data-type="dialogue">
+                <div class="char-avatar">🔥</div>
+                <div class="line-content">
+                    <div class="char-name">Lujuria</div>
+                    <div class="line-text">Hay que dejarla deseando, imaginando. Entiendes <em>(En complicidad con Orgullo)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ANSIEDAD" data-type="dialogue">
+                <div class="char-avatar">😰</div>
+                <div class="line-content">
+                    <div class="char-name">Ansiedad</div>
+                    <div class="line-text">¡A menos claro que crea que no le importamos y ya no nos escriba nunca más y se vaya con alguien más...! <em>(Toma el control)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ORGULLO" data-type="dialogue">
+                <div class="char-avatar">🦚</div>
+                <div class="line-content">
+                    <div class="char-name">Orgullo</div>
+                    <div class="line-text">¡No Ansiedad, espera un poco! <em>(Trata de tomar el control, pero Ansiedad ya lo tiene en la mano)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MATEO" data-type="dialogue">
+                <div class="char-avatar">👦</div>
+                <div class="line-content">
+                    <div class="char-name">Mateo</div>
+                    <div class="line-text"><em>(Mateo toma el celular y responde instantáneamente al mensaje)</em>: ¡Hola! ¡No para nada! ¿¿Cómo estás?? ¡Sí claro! ¿Quieres que nos veamos hoy? Tengo el día libre.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="IRA" data-type="dialogue">
+                <div class="char-avatar">😡</div>
+                <div class="line-content">
+                    <div class="char-name">Ira</div>
+                    <div class="line-text">¡Dos minutos! ¡Duramos dos minutos en contestar! ¡Somos patéticos y vamos a morir solos! <em>(Camina hacia Ansiedad decidido a golpearla y es detenido por Razón)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="TRISTEZA" data-type="dialogue">
+                <div class="char-avatar">😢</div>
+                <div class="line-content">
+                    <div class="char-name">Tristeza</div>
+                    <div class="line-text">Qué triste...</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="PEREZA" data-type="dialogue">
+                <div class="char-avatar">🦥</div>
+                <div class="line-content">
+                    <div class="char-name">Pereza</div>
+                    <div class="line-text">¡¡La dignidad nos duró menos que el devocional de hoy de Romanos!! ¿Era romanos no? <em>(Dirigiéndose a Espíritu, todos hacen memoria hasta terminar viendo a Espíritu)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ESPIRITU" data-type="dialogue">
+                <div class="char-avatar">🕊️</div>
+                <div class="line-content">
+                    <div class="char-name">Espíritu</div>
+                    <div class="line-text">Si por devocional te refieres a la lectura rápida en su aplicación del celular... Sí era Romanos.... ¡Eso sí es triste! <em>(Tristeza asiente)</em> ¡Está desenfocado y ustedes no están ayudando! ¿No les parece? <em>(Todos se le quedan viendo y en eso entra el nuevo mensaje y todos voltean a Mateo ignorando la pregunta de Espíritu)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MATEO" data-type="dialogue">
+                <div class="char-avatar">👦</div>
+                <div class="line-content">
+                    <div class="char-name">Mateo</div>
+                    <div class="line-text">¡Contestó! <em>(Se presenta en pantalla la respuesta de Sofía)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MULTIMEDIA" data-type="multimedia">
+                <div class="char-avatar">📱</div>
+                <div class="line-content">
+                    <div class="char-name">Mensajes en Pantalla (Chat Sofía)</div>
+                    <div class="line-text">
+                        <strong>Sofy:</strong> ¿Estabas esperando mi mensaje?<br>
+                        <strong>Sofy:</strong> <em>[STICKER coqueta]</em>
+                    </div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ANSIEDAD" data-type="dialogue">
+                <div class="char-avatar">😰</div>
+                <div class="line-content">
+                    <div class="char-name">Ansiedad</div>
+                    <div class="line-text">¡Se dio cuenta, que estamos desesperados!! <em>(entra en pánico, mientras Alegría y Tristeza tratan de calmarla)</em> ¡¡¡SABE QUE NOS GUSTA!!!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ORGULLO" data-type="dialogue">
+                <div class="char-avatar">🦚</div>
+                <div class="line-content">
+                    <div class="char-name">Orgullo</div>
+                    <div class="line-text">¡No entren en pánico! Tenemos experiencia en estas situaciones...</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="RAZON" data-type="dialogue">
+                <div class="char-avatar">🧠</div>
+                <div class="line-content">
+                    <div class="char-name">Razón</div>
+                    <div class="line-text">No, no la tenemos...</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="LUJURIA" data-type="dialogue">
+                <div class="char-avatar">🔥</div>
+                <div class="line-content">
+                    <div class="char-name">Lujuria</div>
+                    <div class="line-text">Coquetea un poco... solo un poquito <em>(Dirigiéndose a Mateo, y tomando el control de las manos de Ansiedad)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ESPIRITU" data-type="dialogue">
+                <div class="char-avatar">🕊️</div>
+                <div class="line-content">
+                    <div class="char-name">Espíritu</div>
+                    <div class="line-text">Mateo... no, espera... <em>(se acerca a Mateo e intenta poner su mano en el hombro, pero Mateo se levanta y continúa tratando de contestar)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MATEO" data-type="dialogue">
+                <div class="char-avatar">👦</div>
+                <div class="line-content">
+                    <div class="char-name">Mateo</div>
+                    <div class="line-text">Ok, ok calmado... ¿qué le escribo???</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ORGULLO" data-type="dialogue">
+                <div class="char-avatar">🦚</div>
+                <div class="line-content">
+                    <div class="char-name">Orgullo</div>
+                    <div class="line-text"><em>(toma el control en su mano)</em>: ¡Contesto rápido porque eres mi prioridad...!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="LUJURIA" data-type="dialogue">
+                <div class="char-avatar">🔥</div>
+                <div class="line-content">
+                    <div class="char-name">Lujuria</div>
+                    <div class="line-text">Porque eres la única en quien pienso, en todo momento <em>(comparte el control con Orgullo)</em>... En las noches...</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="RAZON" data-type="dialogue">
+                <div class="char-avatar">🧠</div>
+                <div class="line-content">
+                    <div class="char-name">Razón</div>
+                    <div class="line-text">¡¡¡¡Ehhhh tranquilo!!! ¡Cálmate!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ANSIEDAD" data-type="dialogue">
+                <div class="char-avatar">😰</div>
+                <div class="line-content">
+                    <div class="char-name">Ansiedad</div>
+                    <div class="line-text">¡Puede pensar que somos unos depravados!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="IRA" data-type="dialogue">
+                <div class="char-avatar">😡</div>
+                <div class="line-content">
+                    <div class="char-name">Ira</div>
+                    <div class="line-text">¡Lo que puede hacer es ponernos una orden de restricción gracias al pervertido de Lujuria!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ALEGRIA" data-type="dialogue">
+                <div class="char-avatar">😄</div>
+                <div class="line-content">
+                    <div class="char-name">Alegría</div>
+                    <div class="line-text">¡Pon algo lindo y dulce! ¡Que te hace feliz leer sus mensajes!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="PEREZA" data-type="dialogue">
+                <div class="char-avatar">🦥</div>
+                <div class="line-content">
+                    <div class="char-name">Pereza</div>
+                    <div class="line-text">Mejor solo dale like, te complicas demasiado.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MATEO" data-type="dialogue">
+                <div class="char-avatar">👦</div>
+                <div class="line-content">
+                    <div class="char-name">Mateo</div>
+                    <div class="line-text">No, qué difícil... <em>(Mateo borra todo lo que estaba escribiendo y que le iban diciendo... y se ve esto en pantalla)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="TRISTEZA" data-type="dialogue">
+                <div class="char-avatar">😢</div>
+                <div class="line-content">
+                    <div class="char-name">Tristeza</div>
+                    <div class="line-text">Siento que vas a terminar en lo mismo de siempre... te gusta, pero siempre te sientes muy mal cuando caes en la tentación.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ESPIRITU" data-type="dialogue">
+                <div class="char-avatar">🕊️</div>
+                <div class="line-content">
+                    <div class="char-name">Espíritu</div>
+                    <div class="line-text">¡Pueden dejar de tomar el control! ¡Va a mandar un mensaje incorrecto y terminará en pecado... ya lo han visto sufrir por esto! ¡¡Dame el control Orgullo!! <em>(Extiende la mano para tomar control)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MATEO" data-type="dialogue">
+                <div class="char-avatar">👦</div>
+                <div class="line-content">
+                    <div class="char-name">Mateo</div>
+                    <div class="line-text"><em>(Mateo manda un mensaje y el sonido en pantalla llama la atención de todos)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MULTIMEDIA" data-type="multimedia">
+                <div class="char-avatar">📱</div>
+                <div class="line-content">
+                    <div class="char-name">Mensajes en Pantalla (Chat Sofía)</div>
+                    <div class="line-text">
+                        <strong>Mateo:</strong> ¡Estoy solo en la casa, talvez quieres venir a ver una película hoy!<br>
+                        <strong>Sofy:</strong> ¡jajajaj wow qué directo!<br>
+                        <strong>Sofy:</strong> Te acuerdas que te dije que había soñado algo muy mmm.... Vergonzoso contigo que no te conté...
+                    </div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ESPIRITU" data-type="dialogue">
+                <div class="char-avatar">🕊️</div>
+                <div class="line-content">
+                    <div class="char-name">Espíritu</div>
+                    <div class="line-text">¡Mateo! ¡No! ¡ALTO! ¡Dame el control! <em>(Extiende la mano para tomar el control pero Lujuria se lo arrebata y Razón detiene suavemente al Espíritu)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="LUJURIA" data-type="dialogue">
+                <div class="char-avatar">🔥</div>
+                <div class="line-content">
+                    <div class="char-name">Lujuria</div>
+                    <div class="line-text">Yo me encargo...</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MATEO" data-type="dialogue">
+                <div class="char-avatar">👦</div>
+                <div class="line-content">
+                    <div class="char-name">Mateo</div>
+                    <div class="line-text"><em>(Mateo contesta)</em>: ¡Sí me acuerdo! ¡Todavía quiero saber!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MULTIMEDIA" data-type="multimedia">
+                <div class="char-avatar">📱</div>
+                <div class="line-content">
+                    <div class="char-name">Mensajes en Pantalla (Chat Sofía)</div>
+                    <div class="line-text">
+                        <strong>Sofy:</strong> Bueno el sueño comienza contigo y yo viendo una película!<br>
+                        <strong>Sofy:</strong> <em>[Emoticón de vergüenza y coqueteo]</em><br>
+                        <strong>Mateo:</strong> ¡En serio! ....
+                    </div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="LUJURIA" data-type="dialogue">
+                <div class="char-avatar">🔥</div>
+                <div class="line-content">
+                    <div class="char-name">Lujuria</div>
+                    <div class="line-text">Que te cuente en tu casa hoy... Dile que venga a las 4...</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ESPIRITU" data-type="dialogue">
+                <div class="char-avatar">🕊️</div>
+                <div class="line-content">
+                    <div class="char-name">Espíritu</div>
+                    <div class="line-text">¡Crees que eso es lo que él quiere! ¡Eso lo quieres tú solamente! ¡Dame el control!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ORGULLO" data-type="dialogue">
+                <div class="char-avatar">🦚</div>
+                <div class="line-content">
+                    <div class="char-name">Orgullo</div>
+                    <div class="line-text">Podemos controlar esto sí Espíritu... ¿Tú qué dices Razón?</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="RAZON" data-type="dialogue">
+                <div class="char-avatar">🧠</div>
+                <div class="line-content">
+                    <div class="char-name">Razón</div>
+                    <div class="line-text">No sé... No puedo pensar claro... No sé qué hacer <em>(se aparta poco a poco y se retira de escena)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ALEGRIA" data-type="dialogue">
+                <div class="char-avatar">😄</div>
+                <div class="line-content">
+                    <div class="char-name">Alegría</div>
+                    <div class="line-text">¡Mateo está dudando... no creo que se sienta bien con esto...! Entrega el control Lujuria...</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="TRISTEZA" data-type="dialogue">
+                <div class="char-avatar">😢</div>
+                <div class="line-content">
+                    <div class="char-name">Tristeza</div>
+                    <div class="line-text">Si mandamos ese mensaje vamos a fallar de nuevo... ¡¡¡Siempre fallamos!!! Ya lo hemos intentado antes... ¡¡No va a funcionar!! ¡No somos suficientemente fuertes!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="PEREZA" data-type="dialogue">
+                <div class="char-avatar">🦥</div>
+                <div class="line-content">
+                    <div class="char-name">Pereza</div>
+                    <div class="line-text">¡Es inevitable! ¡Va a pasar! ¡Siempre pasa! ¡No luchen más ya que se arruinó todo de nuevo! ¡Para qué seguir peleando siempre contra lo mismo! ¡Qué cansado! ¡Vamos a perder! ¡¡Aceptémoslo... más fácil!!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="IRA" data-type="dialogue">
+                <div class="char-avatar">😡</div>
+                <div class="line-content">
+                    <div class="char-name">Ira</div>
+                    <div class="line-text">¡Bueno ya qué majadería, contesta algo!! ¡No seas cobarde! <em>(Aprieta el control y Mateo manda el mensaje!)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MULTIMEDIA" data-type="multimedia">
+                <div class="char-avatar">📱</div>
+                <div class="line-content">
+                    <div class="char-name">Mensajes en Pantalla (Chat Sofía)</div>
+                    <div class="line-text">
+                        <strong>Mateo:</strong> Ven a mi casa a las 4 y me cuentas qué pasó... Talvez y lo volvemos realidad...
+                    </div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="IRA" data-type="dialogue">
+                <div class="char-avatar">😡</div>
+                <div class="line-content">
+                    <div class="char-name">Ira</div>
+                    <div class="line-text">¡UPS! ¡Talvez fuimos un poco impulsivos!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="TRISTEZA" data-type="dialogue">
+                <div class="char-avatar">😢</div>
+                <div class="line-content">
+                    <div class="char-name">Tristeza</div>
+                    <div class="line-text">¡Ay no otra vez! <em>(Se entristece)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ESPIRITU" data-type="dialogue">
+                <div class="char-avatar">🕊️</div>
+                <div class="line-content">
+                    <div class="char-name">Espíritu</div>
+                    <div class="line-text">¡Espero que estés contento viéndolo sufrir de nuevo! <em>(empuja a Orgullo a un lado y sale de escena)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MULTIMEDIA" data-type="multimedia">
+                <div class="char-avatar">📱</div>
+                <div class="line-content">
+                    <div class="char-name">Mensajes en Pantalla (Chat Sofía)</div>
+                    <div class="line-text">
+                        <strong>Sofy:</strong> Te veo a las 4 entonces.<br>
+                        <strong>Sofy:</strong> <em>[Sticker sensual]</em>
+                    </div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ANSIEDAD" data-type="dialogue">
+                <div class="char-avatar">😰</div>
+                <div class="line-content">
+                    <div class="char-name">Ansiedad</div>
+                    <div class="line-text">¡No me siento bien! <em>(Y sale de pantalla)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ACOTACION" data-type="action">
+                <div class="char-avatar">🎬</div>
+                <div class="line-content">
+                    <div class="char-name">Acotación</div>
+                    <div class="line-text">(Se apagan las luces. Fin de la segunda escena).</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ESCENA 3 -->
+        <div class="scene-block" data-scene="3">
+            <div class="scene-header">
+                Escena 3: El Conflicto en mi Cabeza...
+                <span>Tarde / 2:00 PM</span>
+            </div>
+
+            <div class="line-card" data-character="ACOTACION" data-type="action">
+                <div class="char-avatar">🎬</div>
+                <div class="line-content">
+                    <div class="char-name">Acotación</div>
+                    <div class="line-text">(Las luces se prenden y Mateo está tomando una siesta en su cama, el reloj marca las 2 pm). Todas las emociones están sentadas inmóviles mientras Mateo duerme su siesta de la tarde...</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="PEREZA" data-type="dialogue">
+                <div class="char-avatar">🦥</div>
+                <div class="line-content">
+                    <div class="char-name">Pereza</div>
+                    <div class="line-text">¡Esto es lo que deberíamos hacer siempre! ¡La vida que merezco!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="IRA" data-type="dialogue">
+                <div class="char-avatar">😡</div>
+                <div class="line-content">
+                    <div class="char-name">Ira</div>
+                    <div class="line-text">¡¡¡Habla por ti!!! Me muero del aburrimiento, qué edad tiene Mateo de verdad cómo puede dormir así a las 2 de la tarde.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ANSIEDAD" data-type="dialogue">
+                <div class="char-avatar">😰</div>
+                <div class="line-content">
+                    <div class="char-name">Ansiedad</div>
+                    <div class="line-text">Debería bañarse y alistarse para verse bien dentro de un rato. Ya sabes dar una buena impresión.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ESPIRITU" data-type="dialogue">
+                <div class="char-avatar">🕊️</div>
+                <div class="line-content">
+                    <div class="char-name">Espíritu</div>
+                    <div class="line-text">¿A quién le va a dar una buena impresión Ansiedad? ¿Dime a quién? ¿A Sofía?</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ALEGRIA" data-type="dialogue">
+                <div class="char-avatar">😄</div>
+                <div class="line-content">
+                    <div class="char-name">Alegría</div>
+                    <div class="line-text">¿No te cae bien su novia?</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="RAZON" data-type="dialogue">
+                <div class="char-avatar">🧠</div>
+                <div class="line-content">
+                    <div class="char-name">Razón</div>
+                    <div class="line-text">Es obvio que no.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="LUJURIA" data-type="dialogue">
+                <div class="char-avatar">🔥</div>
+                <div class="line-content">
+                    <div class="char-name">Lujuria</div>
+                    <div class="line-text">¡Lo que no le cae bien es la diversión!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ESPIRITU" data-type="dialogue">
+                <div class="char-avatar">🕊️</div>
+                <div class="line-content">
+                    <div class="char-name">Espíritu</div>
+                    <div class="line-text">¿Eso es en todo lo que piensas cada vez que tomas el control? ¿En divertirte? MUY BIEN LUJURIA, se nota que le haces bien a Mateo.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ORGULLO" data-type="dialogue">
+                <div class="char-avatar">🦚</div>
+                <div class="line-content">
+                    <div class="char-name">Orgullo</div>
+                    <div class="line-text">¡Oye cálmate! ¡Así es Lujuria ya sabes impulsivo! ¡Solo piensa en... bueno ya sabes es un pervertido! <em>(Lujuria asiente con la cabeza)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ESPIRITU" data-type="dialogue">
+                <div class="char-avatar">🕊️</div>
+                <div class="line-content">
+                    <div class="char-name">Espíritu</div>
+                    <div class="line-text">¿Y tú? No eres mejor... Podrías impulsarlo a sentirse orgulloso de sus actos, pero en vez de eso siempre quieres tener el control solo... ¡Y qué haces, no aceptas que cuando tú estás al mando Mateo termina arrepintiéndose siempre!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="TRISTEZA" data-type="dialogue">
+                <div class="char-avatar">😢</div>
+                <div class="line-content">
+                    <div class="char-name">Tristeza</div>
+                    <div class="line-text">No discutan... La verdad es que siempre está triste...</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="IRA" data-type="dialogue">
+                <div class="char-avatar">😡</div>
+                <div class="line-content">
+                    <div class="char-name">Ira</div>
+                    <div class="line-text">Pues es cierto, cuando tú tomas el control <em>(señalando a Lujuria)</em> solo siente tristeza, e ira por no poder controlar sus más bajos impulsos... ¡Y cuando tú tomas el control <em>(Señala a Orgullo)</em> solo siente vergüenza y ansiedad por no poder confesarlo sin que sea demasiado humillante!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ANSIEDAD" data-type="dialogue">
+                <div class="char-avatar">😰</div>
+                <div class="line-content">
+                    <div class="char-name">Ansiedad</div>
+                    <div class="line-text">¡No es solo confesar! Es que si él le dice a alguien más todo lo que hace lo peor no es solo la vergüenza, lo peor es que si vuelve a fallar todos lo sabrán y no podrá confesar de nuevo porque quien confiesa y vuelve a fallar... ¡Esto es doblemente estresante y humillante!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="LUJURIA" data-type="dialogue">
+                <div class="char-avatar">🔥</div>
+                <div class="line-content">
+                    <div class="char-name">Lujuria</div>
+                    <div class="line-text">Todos están exagerando demasiado. No sé a qué le llaman tristeza, pero él es FELIZ cuando puede disfrutar libremente de sus impulsos.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ALEGRIA" data-type="dialogue">
+                <div class="char-avatar">😄</div>
+                <div class="line-content">
+                    <div class="char-name">Alegría</div>
+                    <div class="line-text">No... no lo es... <em>(Todos voltean a ver a Alegría que ya no parece muy alegre)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="PEREZA" data-type="dialogue">
+                <div class="char-avatar">🦥</div>
+                <div class="line-content">
+                    <div class="char-name">Pereza</div>
+                    <div class="line-text">Es euforia momentánea Lujuria... Luego solo tiene culpa y ganas de rendirse. No quiere luchar más. Se arrepiente, pero no puede hacer nada así que solo quiere olvidar. Es más sencillo. ¿Y cómo olvida?</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="RAZON" data-type="dialogue">
+                <div class="char-avatar">🧠</div>
+                <div class="line-content">
+                    <div class="char-name">Razón</div>
+                    <div class="line-text">Vuelve a pecar.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ORGULLO" data-type="dialogue">
+                <div class="char-avatar">🦚</div>
+                <div class="line-content">
+                    <div class="char-name">Orgullo</div>
+                    <div class="line-text">Es normal que se relaje un poco... Espíritu siempre quiere quitarle todo... Qué importa que quiere acostarse con su novia... ¡Es normal! ¿Qué importa que a veces se le pase la mano con la pornografía? Tiene un cuerpo humano... Lo necesita. ¡Nadie es perfectamente santo y puro! ¡Además, no ha hecho nada aun y estás haciendo una tormenta en un vaso de agua!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ESPIRITU" data-type="dialogue">
+                <div class="char-avatar">🕊️</div>
+                <div class="line-content">
+                    <div class="char-name">Espíritu</div>
+                    <div class="line-text">La pureza no solo se trata de lo que haces... sino de lo que piensas... Con solo que tú tomes el control desde aquí en su cabeza es suficiente. Su corazón ya se ensució. Solo cuando yo tengo el control puedo mantenerlo alejado de ustedes...</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="LUJURIA" data-type="dialogue">
+                <div class="char-avatar">🔥</div>
+                <div class="line-content">
+                    <div class="char-name">Lujuria</div>
+                    <div class="line-text">¡Pero tú no decides eso cierto! Ni nosotros... Solo Mateo puede darte el control. ¡¡Él es el jefe!!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ORGULLO" data-type="dialogue">
+                <div class="char-avatar">🦚</div>
+                <div class="line-content">
+                    <div class="char-name">Orgullo</div>
+                    <div class="line-text">Parece que nosotros lo controlamos, pero solo lo impulsamos. Él es el que decide a quién escuchar, él decide quién tomará el control.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ESPIRITU" data-type="dialogue">
+                <div class="char-avatar">🕊️</div>
+                <div class="line-content">
+                    <div class="char-name">Espíritu</div>
+                    <div class="line-text">Él no es mi jefe y eso lo sabemos bien. Yo estoy aquí porque fui invitado. Así que siempre voy a reclamar el control. Y no me voy a ir si no es Mateo quien lo decide.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ALEGRIA" data-type="dialogue">
+                <div class="char-avatar">😄</div>
+                <div class="line-content">
+                    <div class="char-name">Alegría</div>
+                    <div class="line-text">Entrega el control Lujuria... <em>(Todos se unen en una discusión acalorada unos contra otros exigiendo el control, mientras el Espíritu se acerca a Mateo y lo toca en el hombro)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ESPIRITU" data-type="dialogue">
+                <div class="char-avatar">🕊️</div>
+                <div class="line-content">
+                    <div class="char-name">Espíritu</div>
+                    <div class="line-text">¡Vamos Mateo despierta! Tienes que tomar una decisión... <em>(El Espíritu mueve las hojas de la Biblia y coloca un versículo visible para Mateo)</em>.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ESCENA 4 -->
+        <div class="scene-block" data-scene="4">
+            <div class="scene-header">
+                Escena 4: ¿Quién tiene el control?
+                <span>Desenlace / 3:55 PM</span>
+            </div>
+
+            <div class="line-card" data-character="ACOTACION" data-type="action">
+                <div class="char-avatar">🎬</div>
+                <div class="line-content">
+                    <div class="char-name">Acotación</div>
+                    <div class="line-text">Las luces cambian de color, y Mateo se despierta, ¡poco a poco!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MATEO" data-type="dialogue">
+                <div class="char-avatar">👦</div>
+                <div class="line-content">
+                    <div class="char-name">Mateo</div>
+                    <div class="line-text">¿Qué hora es? <em>(Mateo contesta)</em> ¡Uy es tarde!! ¡Ahorita viene!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="TRISTEZA" data-type="dialogue">
+                <div class="char-avatar">😢</div>
+                <div class="line-content">
+                    <div class="char-name">Tristeza</div>
+                    <div class="line-text">¡No hemos decidido qué vamos a hacer! ¡Cuando ella esté aquí ya no vamos a poder pensar con claridad! No quiero que Mateo falle de nuevo. Eso lo pone muy triste...</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ANSIEDAD" data-type="dialogue">
+                <div class="char-avatar">😰</div>
+                <div class="line-content">
+                    <div class="char-name">Ansiedad</div>
+                    <div class="line-text">¡Ya es muy tarde! ¡Ya debe de estar por llegar! ¡Ya no podemos hacer nada! ¡Mateo lo va a hacer! ¡Quiere hacerlo! ¡¡Va a arruinar todo su esfuerzo hasta ahora!! ¡No lo podemos cambiar! ¡Le fallamos! <em>(Ansiedad se desespera poco a poco y se retira sintiéndose muy mal)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="RAZON" data-type="dialogue">
+                <div class="char-avatar">🧠</div>
+                <div class="line-content">
+                    <div class="char-name">Razón</div>
+                    <div class="line-text">Para, no me dejas pensar.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="LUJURIA" data-type="dialogue">
+                <div class="char-avatar">🔥</div>
+                <div class="line-content">
+                    <div class="char-name">Lujuria</div>
+                    <div class="line-text">No es nada, solo esta vez que pase lo que tenga que pasar y ya.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ORGULLO" data-type="dialogue">
+                <div class="char-avatar">🦚</div>
+                <div class="line-content">
+                    <div class="char-name">Orgullo</div>
+                    <div class="line-text">No vas a cancelar ahora, qué vergüenza. Qué va a pensar de ti.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ALEGRIA" data-type="dialogue">
+                <div class="char-avatar">😄</div>
+                <div class="line-content">
+                    <div class="char-name">Alegría</div>
+                    <div class="line-text">¿Por qué pensaría mal? ¿No se supone que nos quiere?</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="PEREZA" data-type="dialogue">
+                <div class="char-avatar">🦥</div>
+                <div class="line-content">
+                    <div class="char-name">Pereza</div>
+                    <div class="line-text">¡No seas tonta Alegría! ¡Eso no es amor jajajaja qué ingenua! ¡Ni se conocen bien!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="IRA" data-type="dialogue">
+                <div class="char-avatar">😡</div>
+                <div class="line-content">
+                    <div class="char-name">Ira</div>
+                    <div class="line-text">¡Bueno se pueden callar lo van a volver loco! Tú <em>(Señala Ansiedad)</em> ya cállate o te voy a golpear... Tú y tú <em>(Señala a Tristeza y Apatía/Pereza)</em> no ayudan en nada con su lloradera y negatividad. Tú <em>(Señala Lujuria)</em> pervertido y tú <em>(Señala Orgullo)</em> majadero atrás. <em>(Se voltea hacia el Espíritu pero este lo recibe con una mirada autoritaria e Ira se mantiene en silencio y le entrega el control que había tomado. El Espíritu toma el control y se voltea hacia Mateo)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ESPIRITU" data-type="dialogue">
+                <div class="char-avatar">🕊️</div>
+                <div class="line-content">
+                    <div class="char-name">Espíritu</div>
+                    <div class="line-text">¡Mateo! Mira la Biblia <em>(El Espíritu toca a Mateo y Mateo empieza a juntar las cosas de su cama y ve la Biblia abierta en su cama)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MATEO" data-type="dialogue">
+                <div class="char-avatar">👦</div>
+                <div class="line-content">
+                    <div class="char-name">Mateo</div>
+                    <div class="line-text">¿Qué dice? <em>(Mateo lee en voz alta mientras el versículo se proyecta en pantalla)</em> "No imiten las conductas ni las costumbres de este mundo, más bien dejen que Dios los transforme en personas nuevas al cambiarles la manera de pensar. Entonces aprenderán a conocer la voluntad de Dios para ustedes, la cual es buena, agradable y perfecta". Romanos 12:2. ¿Dios qué es esto? ¿Qué estoy haciendo? ¿Qué voy a hacer?</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ESPIRITU" data-type="dialogue">
+                <div class="char-avatar">🕊️</div>
+                <div class="line-content">
+                    <div class="char-name">Espíritu</div>
+                    <div class="line-text">¡Mateo aun hay tiempo! ¡Dile que no venga! ¡Que no puedes! <em>(Mateo toma el celular para cancelarle)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ORGULLO" data-type="dialogue">
+                <div class="char-avatar">🦚</div>
+                <div class="line-content">
+                    <div class="char-name">Orgullo</div>
+                    <div class="line-text">¡No puede hacer eso! Va a quedar como un tonto. No somos unos tontos. ¡Podemos con esto sí, no es un bebé!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ANSIEDAD" data-type="dialogue">
+                <div class="char-avatar">😰</div>
+                <div class="line-content">
+                    <div class="char-name">Ansiedad</div>
+                    <div class="line-text">¡Talvez ella no le vuelva a hablar!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ALEGRIA" data-type="dialogue">
+                <div class="char-avatar">😄</div>
+                <div class="line-content">
+                    <div class="char-name">Alegría</div>
+                    <div class="line-text">¡No, pero ella nos agrada!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MATEO" data-type="dialogue">
+                <div class="char-avatar">👦</div>
+                <div class="line-content">
+                    <div class="char-name">Mateo</div>
+                    <div class="line-text"><em>(Mateo devuelve el celular a la cama dudando. Lee en voz alta mientras el versículo se proyecta en pantalla)</em>: "No imiten las conductas ni las costumbres de este mundo, más bien dejen que Dios los transforme en personas nuevas al cambiarles la manera de pensar. Entonces aprenderán a conocer la voluntad de Dios para ustedes, la cual es buena, agradable y perfecta". Romanos 12:2. ¿Dios qué es esto? ¿Qué estoy haciendo? ¿Qué voy a hacer?</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ESPIRITU" data-type="dialogue">
+                <div class="char-avatar">🕊️</div>
+                <div class="line-content">
+                    <div class="char-name">Espíritu</div>
+                    <div class="line-text">¡Mateo solo tú puedes tomar una decisión! <em>(Mateo toma el celular para cancelarle)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MATEO" data-type="dialogue">
+                <div class="char-avatar">👦</div>
+                <div class="line-content">
+                    <div class="char-name">Mateo</div>
+                    <div class="line-text"><em>(Mateo lee en voz alta mientras encuentra otro versículo que se proyecta en pantalla)</em>: "Destruimos argumentos y toda altivez que se levanta contra el conocimiento de Dios, y llevamos cautivo todo pensamiento para que obedezca a Cristo." 2 Corintios 10:5.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="LUJURIA" data-type="dialogue">
+                <div class="char-avatar">🔥</div>
+                <div class="line-content">
+                    <div class="char-name">Lujuria</div>
+                    <div class="line-text">¡Bueno sí es cierto que puede hacer lo correcto, ella puede venir y nada va a pasar! ¡Él va a resistir bien! No te preocupes no tiene que huir, no necesita cancelar.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ESPIRITU" data-type="dialogue">
+                <div class="char-avatar">🕊️</div>
+                <div class="line-content">
+                    <div class="char-name">Espíritu</div>
+                    <div class="line-text">¡La Biblia dice resiste al diablo, pero huye de la tentación! Esta es una tentación Lujuria y resistir no es suficiente, él debe huir. <em>(Mateo toma el celular para cancelarle y empieza a escribir, pero se detiene)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="TRISTEZA" data-type="dialogue">
+                <div class="char-avatar">😢</div>
+                <div class="line-content">
+                    <div class="char-name">Tristeza</div>
+                    <div class="line-text">¿Y si se queda solo y triste por siempre?</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="PEREZA" data-type="dialogue">
+                <div class="char-avatar">🦥</div>
+                <div class="line-content">
+                    <div class="char-name">Pereza</div>
+                    <div class="line-text">¿Y si de nada sirve el esfuerzo porque igual después va a fallar?</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="IRA" data-type="dialogue">
+                <div class="char-avatar">😡</div>
+                <div class="line-content">
+                    <div class="char-name">Ira</div>
+                    <div class="line-text">¡Basta ya! Me estoy alterando.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MATEO" data-type="dialogue">
+                <div class="char-avatar">👦</div>
+                <div class="line-content">
+                    <div class="char-name">Mateo</div>
+                    <div class="line-text">¡¡¡Dios qué difícil!!! <em>(Mateo vuelve a soltar el celular con rabia y se toma la cabeza entre sus piernas)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ESPIRITU" data-type="dialogue">
+                <div class="char-avatar">🕊️</div>
+                <div class="line-content">
+                    <div class="char-name">Espíritu</div>
+                    <div class="line-text">Mateo no vas a estar solo nunca, todo lo puedes en Cristo que te fortalece, tienes un espíritu de valor y dominio propio, yo estoy contigo... <em>(Mateo toma la Biblia y lee el último versículo que el Espíritu colocó enfrente de él)</em>. Protege tu mente Mateo.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="MATEO" data-type="dialogue">
+                <div class="char-avatar">👦</div>
+                <div class="line-content">
+                    <div class="char-name">Mateo</div>
+                    <div class="line-text"><em>(Mateo lee la Biblia por última vez en voz alta mientras el último versículo se proyecta en la pantalla)</em>: "Por lo tanto, pónganse toda la armadura de Dios, para que cuando llegue el día malo puedan resistir hasta el fin con firmeza. Tomen el casco de la salvación y la espada del Espíritu, que es la palabra de Dios". Efesios 6:13-17. <em>(Mateo toma el celular y se pone frente al público)</em>.</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="TODOS" data-type="dialogue">
+                <div class="char-avatar">👥</div>
+                <div class="line-content">
+                    <div class="char-name">Emociones (Coro)</div>
+                    <div class="line-text">¿Lo va a enviar?</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ORGULLO" data-type="dialogue">
+                <div class="char-avatar">🦚</div>
+                <div class="line-content">
+                    <div class="char-name">Orgullo</div>
+                    <div class="line-text">¡No puedes hacer eso, qué débil!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="LUJURIA" data-type="dialogue">
+                <div class="char-avatar">🔥</div>
+                <div class="line-content">
+                    <div class="char-name">Lujuria</div>
+                    <div class="line-text">¡Tú sabes que quieres estar con ella!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ANSIEDAD" data-type="dialogue">
+                <div class="char-avatar">😰</div>
+                <div class="line-content">
+                    <div class="char-name">Ansiedad</div>
+                    <div class="line-text">¿Vas a cancelar? No es muy tarde...</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ALEGRIA" data-type="dialogue">
+                <div class="char-avatar">😄</div>
+                <div class="line-content">
+                    <div class="char-name">Alegría</div>
+                    <div class="line-text">¡No creo que esté bien, mejor cancela!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="PEREZA" data-type="dialogue">
+                <div class="char-avatar">🦥</div>
+                <div class="line-content">
+                    <div class="char-name">Pereza</div>
+                    <div class="line-text">Aquí vamos de nuevo...</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="RAZON" data-type="dialogue">
+                <div class="char-avatar">🧠</div>
+                <div class="line-content">
+                    <div class="char-name">Razón</div>
+                    <div class="line-text">¿Qué vas a hacer?</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="TRISTEZA" data-type="dialogue">
+                <div class="char-avatar">😢</div>
+                <div class="line-content">
+                    <div class="char-name">Tristeza</div>
+                    <div class="line-text">¿Cancelas?</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="IRA" data-type="dialogue">
+                <div class="char-avatar">😡</div>
+                <div class="line-content">
+                    <div class="char-name">Ira</div>
+                    <div class="line-text">¡MATEO!</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ESPIRITU" data-type="dialogue">
+                <div class="char-avatar">🕊️</div>
+                <div class="line-content">
+                    <div class="char-name">Espíritu</div>
+                    <div class="line-text"><strong>¡¡¡SILENCIO!!!</strong> <em>(El Espíritu grita callando a todos mientras Mateo da un paso al frente)</em>. Mateo... ¿Quién tiene el control?</div>
+                </div>
+            </div>
+
+            <div class="line-card" data-character="ACOTACION" data-type="action">
+                <div class="char-avatar">🎬</div>
+                <div class="line-content">
+                    <div class="char-name">Acotación</div>
+                    <div class="line-text">(Mateo respira hondo, ve hacia el frente y la luz se apaga). <strong>FIN DE LA OBRA.</strong></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- JavaScript para Interactividad -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const charSelect = document.getElementById('charSelect');
+            const modeSelect = document.getElementById('modeSelect');
+            const themeToggle = document.getElementById('themeToggle');
+            const themeText = document.getElementById('themeText');
+            const statMode = document.getElementById('statMode');
+            const statCount = document.getElementById('statCount');
+
+            const cards = Array.from(document.querySelectorAll('.line-card'));
+
+            // Toggle Modo Noche/Día
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('light-mode');
+                if (document.body.classList.contains('light-mode')) {
+                    themeText.textContent = 'Modo Día';
+                    themeToggle.innerHTML = '☀️ <span id="themeText">Modo Día</span>';
+                } else {
+                    themeText.textContent = 'Modo Noche';
+                    themeToggle.innerHTML = '🌙 <span id="themeText">Modo Noche</span>';
+                }
+            });
+
+            function updateScriptView() {
+                const selectedChar = charSelect.value;
+                const mode = modeSelect.value;
+
+                // Limpiar divisores previos
+                document.querySelectorAll('.omitted-divider').forEach(el => el.remove());
+
+                // Reset de estilos base para todas las tarjetas
+                cards.forEach(card => card.classList.remove('is-highlighted', 'hidden'));
+
+                // Si la opción está vacía (NONE), mostrar todo el script sin filtros ni resaltados
+                if (selectedChar === 'NONE') {
+                    statCount.textContent = '-';
+                    statMode.textContent = 'Mostrando libreto completo (Sin selección)';
+                    return;
+                }
+
+                // Encontrar índices de todas las tarjetas del personaje seleccionado
+                const myIndices = [];
+                cards.forEach((card, idx) => {
+                    if (card.dataset.character === selectedChar) {
+                        myIndices.push(idx);
+                        card.classList.add('is-highlighted');
+                    }
+                });
+
+                // Actualizar contador
+                statCount.textContent = myIndices.length;
+                statMode.textContent = modeSelect.options[modeSelect.selectedIndex].text.split('(')[0];
+
+                // Si el modo es 'all', mostramos todo y salimos (manteniendo el resaltado)
+                if (mode === 'all') {
+                    return;
+                }
+
+                // Determinar ventana de contexto
+                let beforeOffset = 0;
+                let afterOffset = 0;
+                if (mode === 'context-1') { beforeOffset = 1; afterOffset = 1; }
+                else if (mode === 'context-2') { beforeOffset = 2; afterOffset = 2; }
+                else if (mode === 'context-3') { beforeOffset = 3; afterOffset = 3; }
+                else if (mode === 'only-me') { beforeOffset = 0; afterOffset = 0; }
+
+                // Crear un set de índices visibles
+                const visibleIndices = new Set();
+                myIndices.forEach(myIdx => {
+                    for (let i = Math.max(0, myIdx - beforeOffset); i <= Math.min(cards.length - 1, myIdx + afterOffset); i++) {
+                        visibleIndices.add(i);
+                    }
+                });
+
+                // Aplicar visibilidad y agregar indicadores de salto
+                let lastVisibleIdx = -1;
+                cards.forEach((card, idx) => {
+                    if (!visibleIndices.has(idx)) {
+                        card.classList.add('hidden');
+                    } else {
+                        // Si hubo un salto mayor a 1 entre la última tarjeta visible y esta, insertar divisor
+                        if (lastVisibleIdx !== -1 && idx - lastVisibleIdx > 1) {
+                            const omittedCount = idx - lastVisibleIdx - 1;
+                            const divider = document.createElement('div');
+                            divider.className = 'omitted-divider';
+                            divider.innerHTML = `✂️ <em>Se omitieron ${omittedCount} intervenciones de otros personajes / acotaciones</em> ✂️`;
+                            card.parentNode.insertBefore(divider, card);
+                        }
+                        lastVisibleIdx = idx;
+                    }
+                });
+            }
+
+            charSelect.addEventListener('change', updateScriptView);
+            modeSelect.addEventListener('change', updateScriptView);
+
+            // Ejecutar al cargar
+            updateScriptView();
+        });
+    </script>
+</body>
+</html>
